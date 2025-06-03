@@ -1,0 +1,245 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.36.1.42791",
+      "templateHash": "4780054844772493596"
+    }
+  },
+  "parameters": {
+    "azAppServicePlan": {
+      "type": "string"
+    },
+    "azWebApp": {
+      "type": "string"
+    },
+    "azAppInsights": {
+      "type": "string"
+    },
+    "azSQLserver": {
+      "type": "string"
+    },
+    "azSQLdb": {
+      "type": "string"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "AppServicePlan",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "azInstrumentationKey": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'AppInsights'), '2022-09-01').outputs.oInstrumentationKey.value]"
+          },
+          "azAppServicePlan": {
+            "value": "[parameters('azAppServicePlan')]"
+          },
+          "azWebApp": {
+            "value": "[parameters('azWebApp')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.36.1.42791",
+              "templateHash": "13293762174025617822"
+            }
+          },
+          "parameters": {
+            "azAppServicePlan": {
+              "type": "string"
+            },
+            "azWebApp": {
+              "type": "string"
+            },
+            "azInstrumentationKey": {
+              "type": "string"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Web/serverfarms",
+              "apiVersion": "2020-12-01",
+              "name": "[parameters('azAppServicePlan')]",
+              "location": "[resourceGroup().location]",
+              "sku": {
+                "name": "F1",
+                "tier": "Free",
+                "capacity": 1
+              }
+            },
+            {
+              "type": "Microsoft.Web/sites",
+              "apiVersion": "2021-01-15",
+              "name": "[parameters('azWebApp')]",
+              "location": "[resourceGroup().location]",
+              "properties": {
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('azAppServicePlan'))]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', parameters('azAppServicePlan'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Web/sites/config",
+              "apiVersion": "2024-04-01",
+              "name": "[format('{0}/{1}', parameters('azWebApp'), 'web')]",
+              "properties": {
+                "appSettings": [
+                  {
+                    "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+                    "value": "[parameters('azInstrumentationKey')]"
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('azWebApp'))]"
+              ]
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'AppInsights')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "SQLserver",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "azSQLdb": {
+            "value": "[parameters('azSQLdb')]"
+          },
+          "azSQLserver": {
+            "value": "[parameters('azSQLserver')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.36.1.42791",
+              "templateHash": "4556899204170670333"
+            }
+          },
+          "parameters": {
+            "azSQLserver": {
+              "type": "string"
+            },
+            "azSQLdb": {
+              "type": "string"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Sql/servers",
+              "apiVersion": "2014-04-01",
+              "name": "[parameters('azSQLserver')]",
+              "location": "[resourceGroup().location]",
+              "properties": {
+                "administratorLogin": "sqladmin",
+                "administratorLoginPassword": "sql@password1234"
+              }
+            },
+            {
+              "type": "Microsoft.Sql/servers/firewallRules",
+              "apiVersion": "2021-02-01-preview",
+              "name": "[format('{0}/{1}', parameters('azSQLserver'), 'sqlconnectionfirewallrule')]",
+              "properties": {
+                "startIpAddress": "10.2.0.1",
+                "endIpAddress": "10.2.0.254"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Sql/servers', parameters('azSQLserver'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Sql/servers/databases",
+              "apiVersion": "2014-04-01",
+              "name": "[format('{0}/{1}', parameters('azSQLserver'), parameters('azSQLdb'))]",
+              "location": "[resourceGroup().location]",
+              "properties": {
+                "collation": "SQL_Latin1_General_CP1_CI_AS",
+                "edition": "Basic",
+                "maxSizeBytes": "2147483648",
+                "requestedServiceObjectiveName": "Basic"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Sql/servers', parameters('azSQLserver'))]"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "AppInsights",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "azAppInsights": {
+            "value": "[parameters('azAppInsights')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.36.1.42791",
+              "templateHash": "916921577976805646"
+            }
+          },
+          "parameters": {
+            "azAppInsights": {
+              "type": "string"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Insights/components",
+              "apiVersion": "2020-02-02",
+              "name": "[parameters('azAppInsights')]",
+              "location": "[resourceGroup().location]",
+              "kind": "web",
+              "properties": {
+                "Application_Type": "web"
+              }
+            }
+          ],
+          "outputs": {
+            "oInstrumentationKey": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Insights/components', parameters('azAppInsights')), '2020-02-02').InstrumentationKey]"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

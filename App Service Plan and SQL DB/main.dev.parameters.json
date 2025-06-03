@@ -1,0 +1,32 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "azAppServicePlan": {
+            "value": "azbicepappserviceplan-dev-eastus" 
+        },
+        "azWebApp": {
+            "value": "azbicepwebapp-dev-eastus" 
+        },
+        "azAppInsights": {
+            "value": "azbicepappinsights-dev-eastus" 
+        },
+        "azSQLserver": {
+            "value": "azbicepsqlserver-dev-centralus" 
+        },
+        "azSQLdb": {
+            "value": "azbicepsqldb-dev-centralus"
+        },
+        "azSQLlogin": {
+            "value": "sqladmin"
+        },
+        "azSQLloginPassword": {
+            "reference": {
+                "keyVault": {
+                    "id": "/subscriptions/098e222e-263d-42ec-9941-46e048a291f7/resourceGroups/azbicep-dev-centralus-rg1/providers/Microsoft.KeyVault/vaults/az-dev-centralus-keyvult"
+                },
+                "secretName": "sqlpassword"
+            }
+        }
+    }
+}
